@@ -26,7 +26,7 @@ uint32_t remarkable_framebuffer_refresh(remarkable_framebuffer* fb,
     return -1;
 
   // TODO: So the drawing is twice as densely packed as refreshing horizontally?
-  x = x / 2;
+  //x = x / 2;
 
   mxcfb_update_data data = {0};
   data.update_region.top = max(min(y, fb->vinfo.yres - 1), 0);
