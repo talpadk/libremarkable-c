@@ -10,6 +10,7 @@
 
 
 MultitouchSlot multitouchSlots_[MAX_MULTITOUCH_TRACKS];
+static MultitouchSlot multitouchEventBufferSlots_[MAX_MULTITOUCH_TRACKS];
 
 static int eventHandle_;
 static int32_t currentSlot_;
@@ -20,11 +21,22 @@ void remarkable_multitouch_init(void){
     multitouchSlots_[i].xRaw           = MULTITOUCH_UNDEFINED;
     multitouchSlots_[i].yRaw           = MULTITOUCH_UNDEFINED;
     multitouchSlots_[i].x              = MULTITOUCH_UNDEFINED;
-    multitouchSlots_[i].y              = MULTITOUCH_UNDEFINED;    
+    multitouchSlots_[i].y              = MULTITOUCH_UNDEFINED;
     multitouchSlots_[i].pressure       = MULTITOUCH_UNDEFINED;
     multitouchSlots_[i].majorTouchAxis = MULTITOUCH_UNDEFINED;
     multitouchSlots_[i].minorTouchAxis = MULTITOUCH_UNDEFINED;
     multitouchSlots_[i].orientation    = MULTITOUCH_UNDEFINED;
+
+    multitouchEventBufferSlots_[i].trackingId     = -1;
+    multitouchEventBufferSlots_[i].xRaw           = MULTITOUCH_UNDEFINED;
+    multitouchEventBufferSlots_[i].yRaw           = MULTITOUCH_UNDEFINED;
+    multitouchEventBufferSlots_[i].x              = MULTITOUCH_UNDEFINED;
+    multitouchEventBufferSlots_[i].y              = MULTITOUCH_UNDEFINED;
+    multitouchEventBufferSlots_[i].pressure       = MULTITOUCH_UNDEFINED;
+    multitouchEventBufferSlots_[i].majorTouchAxis = MULTITOUCH_UNDEFINED;
+    multitouchEventBufferSlots_[i].minorTouchAxis = MULTITOUCH_UNDEFINED;
+    multitouchEventBufferSlots_[i].orientation    = MULTITOUCH_UNDEFINED;
+
   }
   currentSlot_ = 0;
   eventHandle_ = open("/dev/input/event1",O_RDONLY);
@@ -38,7 +50,7 @@ void remarkable_multitouch_deinit(void){
 }
 
 
-void remarkable_multitouch_getTouchEvent(void){
+void remarkable_multitouch_animate(void){
   if (eventHandle_<0) { return; }
   struct input_event inputEvent;
   
@@ -53,13 +65,16 @@ void remarkable_multitouch_getTouchEvent(void){
 	  multitouchSlots_[currentSlot_].x    = ((767-multitouchSlots_[currentSlot_].xRaw)*1403)/767;
 	  if (multitouchSlots_[currentSlot_].x < 0)    { multitouchSlots_[currentSlot_].x = 0; }
 	  if (multitouchSlots_[currentSlot_].x > 1403) { multitouchSlots_[currentSlot_].x = 1403; }
-	  
+
+	  multitouchEventBufferSlots_[currentSlot_].x = multitouchSlots_[currentSlot_].x; //Update the event detection buffers as well
 	}
 	else if (inputEvent.code == ABS_MT_POSITION_Y){
 	  multitouchSlots_[currentSlot_].yRaw = inputEvent.value;
 	  multitouchSlots_[currentSlot_].y    = ((1023-multitouchSlots_[currentSlot_].yRaw)*1871)/1023;
 	  if (multitouchSlots_[currentSlot_].y < 0)    { multitouchSlots_[currentSlot_].y = 0; }
 	  if (multitouchSlots_[currentSlot_].y > 1871) { multitouchSlots_[currentSlot_].y = 1871; }
+
+	  multitouchEventBufferSlots_[currentSlot_].y = multitouchSlots_[currentSlot_].y; //Update the event detection buffers as well
 	}
 	else if (inputEvent.code == ABS_MT_PRESSURE){
 	  multitouchSlots_[currentSlot_].pressure = inputEvent.value; 
@@ -82,7 +97,45 @@ void remarkable_multitouch_getTouchEvent(void){
 	*/
       }
     }
+  }     
+}
 
+uint8_t remarkable_multitouch_getNextEvent(MultitouchEvent *event){
+  for (uint32_t i = 0; i < MAX_MULTITOUCH_TRACKS; i++) {
+    
+    if (multitouchSlots_[i].trackingId != -1 && 
+	multitouchEventBufferSlots_[i].trackingId == -1){
+      //Touch start, wait for coordinates
+      if (multitouchEventBufferSlots_[i].x != MULTITOUCH_UNDEFINED &&
+	  multitouchEventBufferSlots_[i].y != MULTITOUCH_UNDEFINED){
+	//Mark the event as detected
+	multitouchEventBufferSlots_[i].trackingId = multitouchSlots_[i].trackingId;
+	//Copy the event data
+	event->eventType = MULTITOUCH_EVENT_CLICK;
+	event->x = multitouchEventBufferSlots_[i].x;
+	event->y = multitouchEventBufferSlots_[i].y;
+	return 1;	
+      }      
+    }
+    else if (multitouchSlots_[i].trackingId == -1 && 
+	     multitouchEventBufferSlots_[i].trackingId != -1){
+      //Touch end, wait for coordinates (we probably always have them by now)
+      if (multitouchEventBufferSlots_[i].x != MULTITOUCH_UNDEFINED &&
+	  multitouchEventBufferSlots_[i].y != MULTITOUCH_UNDEFINED){
+	//Mark the event as detected
+	multitouchEventBufferSlots_[i].trackingId = multitouchSlots_[i].trackingId;
+	//Copy the event data
+	event->eventType = MULTITOUCH_EVENT_RELEASE;
+	event->x = multitouchEventBufferSlots_[i].x;
+	event->y = multitouchEventBufferSlots_[i].y;
+	//Invalidate the coordinates
+	multitouchEventBufferSlots_[i].x = MULTITOUCH_UNDEFINED;
+	multitouchEventBufferSlots_[i].y = MULTITOUCH_UNDEFINED;
+	return 1;	
+      }
+    }
   }
-      
+  //No events found
+  event->eventType = MULTITOUCH_EVENT_NONE;
+  return 0;
 }

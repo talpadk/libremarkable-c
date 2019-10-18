@@ -24,7 +24,8 @@ void clearRenderText(remarkable_framebuffer *screen, FT_Face font, const char *s
   remarkable_blitRect(screen, 15, bounds.xMin, bounds.yMin, bounds.xMax, bounds.yMax);
   remarkable_text_render_simple(screen, font, string, baseX, baseY, 1, &tmp);
 
-  uint32_t marker = remarkable_framebuffer_refresh(screen, UPDATE_MODE_FULL, WAVEFORM_MODE_GC16_FAST, 4096, EPDC_FLAG_USE_REMARKABLE_DITHER, 0, DRAWING_QUANT_BIT, 0, bounds.yMin, bounds.xMin, bounds.yMax-bounds.yMin+1, bounds.xMax-bounds.xMin+1);
+  /*uint32_t marker = */
+  remarkable_framebuffer_refresh(screen, UPDATE_MODE_FULL, WAVEFORM_MODE_GC16_FAST, 4096, EPDC_FLAG_USE_REMARKABLE_DITHER, 0, DRAWING_QUANT_BIT, 0, bounds.yMin, bounds.xMin, bounds.yMax-bounds.yMin+1, bounds.xMax-bounds.xMin+1);
   //remarkable_framebuffer_wait_refresh_marker(screen, marker);
 }
 
@@ -138,14 +139,25 @@ int main(void){
 
   remarkable_framebuffer_refresh(screen, UPDATE_MODE_FULL, WAVEFORM_MODE_GC16_FAST, 4096, EPDC_FLAG_USE_REMARKABLE_DITHER, 0, DRAWING_QUANT_BIT, 0, 0,0, 1872,1404);
 
-  while (1) {
+  uint8_t done = 0;
+  MultitouchEvent touchEvent;
+  while (!done) {
   
-  for (uint32_t i = 0; i < MAX_MULTITOUCH_TRACKS; i++) {
-    updateSlotGfx(screen, fontMono, i);
-  }
-  //remarkable_framebuffer_refresh(screen, UPDATE_MODE_FULL, WAVEFORM_MODE_GC16_FAST, 4096, EPDC_FLAG_USE_REMARKABLE_DITHER, 0, DRAWING_QUANT_BIT, 0, 0,0, 1872,1404);
+    for (uint32_t i = 0; i < MAX_MULTITOUCH_TRACKS; i++) {
+      updateSlotGfx(screen, fontMono, i);
+    }
 
-  remarkable_multitouch_getTouchEvent();
+    remarkable_multitouch_animate();
+    while (remarkable_multitouch_getNextEvent(&touchEvent)){
+      //Look for a release above the exit "button"
+      if (touchEvent.eventType == MULTITOUCH_EVENT_RELEASE &&
+	  exitBox.xMin <= touchEvent.x &&
+	  touchEvent.x <= exitBox.xMax && 
+	  exitBox.yMin <= touchEvent.y &&
+	  touchEvent.y <= exitBox.yMax){
+	done = 1;
+      }
+    }
   }
 
   return 0;
