@@ -85,3 +85,25 @@ uint32_t utf8CharToUnicode(const uint8_t *input, uint32_t *output){
       return 1;
     }
 }
+
+
+uint8_t utf8StringToUnicodeN(const uint8_t *input, uint32_t *output, uint32_t maxLength){
+  while (*input != 0 && maxLength>1){
+    uint32_t unicodeChar;
+    uint32_t bytesConsumed;
+    bytesConsumed = utf8CharToUnicode(*input, &unicodeChar);
+    if (bytesConsumed == 0) {
+      //Decoding error
+      *output = 0; //Null terminate what we could decoded
+      return 0; //Signal failure
+    }
+    else {
+      *output = unicodeChar;
+    }
+    input+=bytesConsumed;
+    output++;
+    maxLength--;
+  }
+  *output = 0; //Null terminate the string
+  return *input==0; //All input bytes converted 
+}

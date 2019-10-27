@@ -22,6 +22,15 @@ uint32_t utf8StringLength(const char *string);
  */
 uint32_t utf8CharToUnicode(const uint8_t *input, uint32_t *output);
 
-
+/** 
+ * Converts an utf8 string to unicode 
+ * 
+ * @param input the input utf8 string 
+ * @param output the output buffer
+ * @param maxLength 
+ * 
+ * @return true if the conversion completed without errors
+ */
+uint8_t utf8StringToUnicodeN(const uint8_t *input, uint32_t *output, uint32_t maxLength);
 
 #endif //UTF8_DECODE_H 
