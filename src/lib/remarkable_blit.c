@@ -17,9 +17,11 @@ void remarkable_fastBlit(remarkable_framebuffer *screen, const uint8_t *gfx, uin
   }
 }
 
-void remarkable_blit(remarkable_framebuffer *screen, const uint8_t *gfx, int16_t xPos, int16_t yPos, int16_t width, int16_t height, uint8_t inverse){
+void remarkable_blit(remarkable_framebuffer *screen, const uint8_t *gfx, int16_t xPos, int16_t yPos, int16_t width, int16_t height, int16_t alphaIndex, uint16_t lut[16]){
   int16_t inputModulo = 0;
 
+  if (lut==0) { lut = lut16_; }
+  
   
   //=== Clipping ===
   //Y Clipping
@@ -54,25 +56,33 @@ void remarkable_blit(remarkable_framebuffer *screen, const uint8_t *gfx, int16_t
 
   uint16_t modulo = (screen->finfo.line_length>>1) - width;
 
-  if (!inverse){
+  if (alphaIndex < 0){
     for (uint16_t y = 0; y < height; y++) {
       for (uint16_t x = 0; x < width; x++) {
-	*pixels++ = lut16_[(*gfx++)>>4];
+	uint8_t colourIndex = *gfx++;
+	*pixels = lut[colourIndex>>4];
+	pixels++;
       }
       pixels +=  modulo;
       gfx += inputModulo;
     }
   }
   else {
+    uint8_t alphaByte = (uint8_t)((uint16_t)alphaIndex);
+    
     for (uint16_t y = 0; y < height; y++) {
       for (uint16_t x = 0; x < width; x++) {
-	*pixels++ = lut16_[15-((*gfx++)>>4)];
+	uint8_t colourIndex = *gfx++;
+	if (colourIndex != alphaByte){
+	  *pixels = lut[colourIndex>>4];
+	}
+	pixels++;
       }
       pixels +=  modulo;
       gfx += inputModulo;
     }
-  }
     
+  }
   
 }
 

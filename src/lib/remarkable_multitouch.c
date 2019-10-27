@@ -92,7 +92,7 @@ void remarkable_multitouch_animate(void){
 	  multitouchSlots_[currentSlot_].orientation = inputEvent.value;
 	}
 	/*else {
-	  printf("\tUnhandled code=%X\n", inputEvent.code);
+	  printf("\tUnhandled multitouch code=%X\n", inputEvent.code);
 	}
 	*/
       }

@@ -17,7 +17,7 @@
  */
 void remarkable_fastBlit(remarkable_framebuffer *screen, const uint8_t *gfx, uint16_t xPos, uint16_t yPos, uint16_t width, uint16_t height);
 
-void remarkable_blit(remarkable_framebuffer *screen, const uint8_t *gfx, int16_t xPos, int16_t yPos, int16_t width, int16_t height, uint8_t inverse);
+void remarkable_blit(remarkable_framebuffer *screen, const uint8_t *gfx, int16_t xPos, int16_t yPos, int16_t width, int16_t height, int16_t alphaIndex, uint16_t lut[16]);
 
 void remarkable_blitRect(remarkable_framebuffer *screen, uint8_t colour, int16_t xStartPos, uint16_t yStartPos, int16_t xStopPos, uint16_t yStopPos);
 

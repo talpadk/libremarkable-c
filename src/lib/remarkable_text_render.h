@@ -18,5 +18,7 @@ typedef struct {
 
 void remarkable_text_render_simple(remarkable_framebuffer *screen, FT_Face font, const char *text, int16_t x, int16_t y, uint8_t doDraw, TextBoundingBoundingBox *boundingBox);
 
+void remarkable_text_render_simple_alpha_colour(remarkable_framebuffer *screen, FT_Face font, const char *text, int16_t x, int16_t y, uint8_t doDraw, TextBoundingBoundingBox *boundingBox, int16_t alphaIndex, uint16_t lut[16]);
+
 
 #endif //REMARKABLE_TEXT_RENDER_H 

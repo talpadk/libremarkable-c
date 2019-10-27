@@ -2,14 +2,19 @@
 
 #include "remarkable_blit.h"
 #include "utf8_decode.h"
+#include "remarkable_lut.h"
 
 void remarkable_text_render_simple(remarkable_framebuffer *screen, FT_Face font, const char *text, int16_t x, int16_t y, uint8_t doDraw, TextBoundingBoundingBox *boundingBox){
+  remarkable_text_render_simple_alpha_colour(screen, font, text, x,y, doDraw, boundingBox, -1, lut16Inverse_);
+}
+void remarkable_text_render_simple_alpha_colour(remarkable_framebuffer *screen, FT_Face font, const char *text, int16_t x, int16_t y, uint8_t doDraw, TextBoundingBoundingBox *boundingBox, int16_t alphaIndex, uint16_t lut[16]){
   uint8_t done = 0;
   FT_GlyphSlot slot;
 
   int16_t renderX;
   int16_t renderY;
 
+  
   if (boundingBox != 0){
     boundingBox->xMin =  32767;
     boundingBox->xMax = -32768;
@@ -39,7 +44,7 @@ void remarkable_text_render_simple(remarkable_framebuffer *screen, FT_Face font,
       
       if (doDraw){
 	FT_Render_Glyph(font->glyph, FT_RENDER_MODE_NORMAL );
-	remarkable_blit(screen, slot->bitmap.buffer, renderX, renderY, slot->bitmap.width, slot->bitmap.rows, 1);
+	remarkable_blit(screen, slot->bitmap.buffer, renderX, renderY, slot->bitmap.width, slot->bitmap.rows, alphaIndex, lut);
       }
       x += slot->advance.x >> 6;
     }
